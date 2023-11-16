@@ -1,0 +1,31 @@
+import requests, json
+import pandas as pd
+import datetime
+
+if provider == 'openex':
+    to_currency_list = []
+    for currency, info in to_currency.items():
+        if currency != 'USD':
+            to_currency_list.append(currency)
+    to_currency_str = ','.join(to_currency_list)
+    base_url = r"https://openexchangerates.org/api/latest.json?"
+    main_url = base_url + "app_id=" + api_key + "&base=" + from_currency + "&symbols=RUB,INR,AED" + to_currency_str
+elif provider == 'alphavantage':
+    base_url = r"https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE"
+    main_url = base_url + "&from_currency=" + from_currency + "&to_currency=" + to_currency + "&apikey=" + api_key
+else: 
+    print(f'{provider} provider is not available')
+
+req_ob = requests.get(main_url)  
+result = req_ob.json() # json method return json format data into python dictionary data type. Result contains list of nested dictionaries
+
+rates_data = result['rates']
+timestamp = result['timestamp']
+
+df = pd.DataFrame(list(rates_data.items()), columns=['Quote', 'Rate'])
+df['Base'] = 'USD'
+df['Pair'] = df['Base'] + df['Quote'].str.upper()
+df['timestamp'] = timestamp
+dt_object = datetime.datetime.fromtimestamp(timestamp)
+formatted_date = dt_object.strftime('%Y-%m-%d %H:%M:%S')
+df['datetime'] = formatted_date
